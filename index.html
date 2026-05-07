@@ -1,0 +1,1193 @@
+﻿<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StructCalc prudenziale</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #0f172a; }
+      main { max-width: 896px; margin: 0 auto; padding: 24px 16px 48px; }
+      header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #1e293b; border-bottom: 1px solid #334155; padding: 14px 24px; }
+      h1 { margin: 0; font-size: 20px; line-height: 1.15; color: white; }
+      h2 { margin: 0 0 14px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #94a3b8; }
+      p { color: #94a3b8; line-height: 1.6; }
+      .brand { display: flex; align-items: center; gap: 12px; }
+      .brand-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 8px; background: #2563eb; color: white; font-size: 20px; font-weight: 900; }
+      .tabs { display: flex; gap: 4px; padding: 4px; border: 1px solid #334155; border-radius: 8px; background: #0f172a; overflow-x: auto; }
+      .tabs button { border: 0; border-radius: 6px; padding: 9px 14px; width: auto; color: #94a3b8; background: transparent; font-size: 13px; white-space: nowrap; }
+      .tabs button.active { background: #1e293b; color: #60a5fa; }
+      .chapter { display: none; }
+      .chapter.active { display: block; }
+      .grid { display: grid; gap: 18px; }
+      .summary { display: flex; flex-direction: column; background: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow: hidden; }
+      .cards-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .cards-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
+      .model-card { padding: 0; overflow: hidden; }
+      .model-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 14px 18px; border-bottom: 1px solid #334155; }
+      .model-head h2 { margin: 0; }
+      .model-head span { color: #94a3b8; font-size: 12px; font-weight: 800; }
+      .model-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+      .model-tools button { width: auto; padding: 7px 10px; font-size: 11px; border-color: #334155; color: #cbd5e1; }
+      .model-tools button.active { color: #60a5fa; background: #0f172a; border-color: #334155; }
+      .model-frame { height: 350px; background: radial-gradient(circle at 50% 35%, #1e293b 0, #0f172a 62%); cursor: grab; user-select: none; touch-action: none; }
+      .model-frame.dragging { cursor: grabbing; }
+      .model-frame svg { display: block; width: 100%; height: 100%; }
+      .summary-main { display: grid; grid-template-columns: 1fr 2fr; }
+      .portata { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: #2563eb; padding: 26px; color: white; }
+      .portata h2 { color: #bfdbfe; margin-bottom: 8px; }
+      .big { display: flex; align-items: end; gap: 6px; color: white; }
+      .big strong { font-size: 44px; line-height: .9; }
+      .big span { padding-bottom: 3px; font-size: 18px; font-weight: 800; color: #dbeafe; }
+      .bottleneck-panel { padding: 24px; display: grid; gap: 16px; }
+      .alert { display: flex; gap: 12px; padding: 12px; border: 1px solid rgba(239,68,68,.3); border-radius: 8px; background: rgba(127,29,29,.22); color: #f87171; }
+      .weights { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid #334155; padding-top: 12px; }
+      .weight { text-align: center; border-left: 1px solid #334155; padding: 0 8px; }
+      .weight:first-child { border-left: 0; }
+      .weight small { display: block; color: #64748b; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 5px; }
+      .weight strong { color: white; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 14px; }
+      label { display: grid; gap: 6px; color: #cbd5e1; font-size: 13px; font-weight: 700; }
+      input, select, button {
+        width: 100%;
+        border: 1px solid #475569;
+        border-radius: 6px;
+        background: #020617;
+        color: #f8fafc;
+        padding: 9px 10px;
+        font: inherit;
+      }
+      button { cursor: pointer; font-weight: 800; }
+      button.active { background: #2563eb; border-color: #60a5fa; }
+      .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .nine { grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; }
+      .inline-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid #334155; }
+      .inline-row label { display: block; }
+      .inline-row input { max-width: 110px; text-align: right; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+      .field-note { margin: -4px 0 4px; color: #64748b; font-size: 12px; line-height: 1.45; }
+      .check-list { display: grid; gap: 12px; }
+      .check-list label { display: flex; grid-template-columns: none; align-items: center; gap: 10px; cursor: pointer; }
+      .check-list input { width: 16px; height: 16px; padding: 0; }
+      .table-wrap { overflow-x: auto; }
+      table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13px; }
+      th { background: #020617; color: #94a3b8; text-align: left; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+      th, td { padding: 10px; border-top: 1px solid #334155; }
+      td.num, th.num { text-align: right; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+      tr.hot { background: rgba(127, 29, 29, .45); color: #fee2e2; }
+      .warning { background: rgba(120, 53, 15, .28); border-color: rgba(251, 191, 36, .45); }
+      .warning h2 { color: #fde68a; }
+      ul { margin: 0; padding-left: 18px; color: #fde68a; line-height: 1.55; }
+      .print-card { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+      .print-card h2 { color: #334155; }
+      .print-card p { color: #334155; }
+      .print-actions { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+      .print-actions button { width: auto; background: #2563eb; color: white; border-color: #2563eb; }
+      .print-sheet { background: white; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 8px; padding: 22px; }
+      .print-sheet h3 { margin: 0 0 6px; font-size: 24px; color: #0f172a; }
+      .print-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+      .print-box { border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; }
+      .print-box small { display: block; color: #64748b; font-weight: 800; text-transform: uppercase; font-size: 10px; letter-spacing: .08em; }
+      .print-box strong { display: block; color: #0f172a; font-size: 18px; margin-top: 4px; }
+      .print-table { width: 100%; min-width: 0; margin-top: 18px; border-collapse: collapse; color: #0f172a; }
+      .print-table th, .print-table td { border: 1px solid #cbd5e1; padding: 8px; }
+      .print-table th { background: #e2e8f0; color: #0f172a; }
+      @media print {
+        body { background: white; color: #0f172a; }
+        header, .model-card, .summary, #geom, #topology, #cover, #profiles, #limits-card, #warnings-card, .print-actions { display: none !important; }
+        main { max-width: none; padding: 0; }
+        .chapter, .print-card { display: block !important; border: 0; padding: 0; background: white; }
+        .print-sheet { border: 0; padding: 0; }
+        @page { margin: 14mm; }
+      }
+      @media (max-width: 860px) {
+        header { flex-direction: column; align-items: stretch; }
+        .summary-main, .cards-2, .cards-3, .two, .print-grid { grid-template-columns: 1fr; }
+        .weights { grid-template-columns: 1fr; gap: 10px; }
+        .weight { border-left: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <div class="brand-icon">S</div>
+        <h1>Calcolo Portata Paglioli e Struttura</h1>
+      </div>
+      <nav class="tabs">
+        <button class="active" type="button" data-chapter="dashboard-chapter">Dashboard</button>
+        <button type="button" data-chapter="checks-chapter">Verifiche</button>
+        <button type="button" data-chapter="print-chapter">Stampa PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="chapter active" id="dashboard-chapter">
+        <section class="card model-card" style="margin-top:18px">
+          <div class="model-head">
+            <h2>Modello 3D</h2>
+            <div class="model-tools">
+              <span id="model-caption">Vista isometrica</span>
+              <button type="button" data-view="iso" class="active">ISO</button>
+              <button type="button" data-view="top">SOPRA</button>
+              <button type="button" data-view="front">FRONTE</button>
+              <button type="button" data-zoom="in">+</button>
+              <button type="button" data-zoom="out">-</button>
+              <button type="button" data-view="reset">RESET</button>
+            </div>
+          </div>
+          <div class="model-frame" id="model"></div>
+        </section>
+
+        <section class="summary" id="summary" style="margin-top:18px"></section>
+
+        <section class="grid cards-2" style="margin-top:18px">
+          <section class="card" id="geom"></section>
+          <section class="card" id="topology"></section>
+        </section>
+
+        <section class="card" id="cover" style="margin-top:18px"></section>
+
+        <section class="card" id="profiles" style="margin-top:18px"></section>
+      </section>
+
+      <section class="chapter" id="checks-chapter">
+        <section class="card" id="limits-card" style="margin-top:18px">
+          <h2>Verifiche calcolate</h2>
+          <div class="table-wrap" id="limits"></div>
+        </section>
+      </section>
+
+      <section class="chapter" id="print-chapter">
+        <section class="card warning" id="warnings-card" style="margin-top:18px">
+          <h2>Note di sicurezza</h2>
+          <ul id="warnings"></ul>
+        </section>
+
+        <section class="card print-card" id="print-card" style="margin-top:18px">
+          <div class="print-actions">
+            <button type="button" id="print-button">Stampa / salva PDF</button>
+          </div>
+          <div class="print-sheet" id="print-sheet"></div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const profiles = {
+  ang_60x60x4: { id: "ang_60x60x4", name: "Angolare 60x60x4", Wx: 3.65, Ix: 15.3, Imin: 4.8, Area: 4.64, open: true },
+  ang_60x60x5: { id: "ang_60x60x5", name: "Angolare 60x60x5", Wx: 4.5, Ix: 18.7, Imin: 5.9, Area: 5.75, open: true },
+  ang_60x60x6: { id: "ang_60x60x6", name: "Angolare 60x60x6", Wx: 5.3, Ix: 22.8, Imin: 7.2, Area: 6.91, open: true },
+  ang_80x80x4: { id: "ang_80x80x4", name: "Angolare 80x80x4", Wx: 7.04, Ix: 39.4, Imin: 12.4, Area: 6.24, open: true },
+  ang_80x80x5: { id: "ang_80x80x5", name: "Angolare 80x80x5", Wx: 8.75, Ix: 48.6, Imin: 15.3, Area: 7.75, open: true },
+  ang_80x80x6: { id: "ang_80x80x6", name: "Angolare 80x80x6", Wx: 10.4, Ix: 57.5, Imin: 18.1, Area: 9.24, open: true },
+  ang_100x100x10: { id: "ang_100x100x10", name: "Angolare 100x100x10", Wx: 24.6, Ix: 177, Imin: 55.8, Area: 19.2, open: true },
+  tub_60x40x3: { id: "tub_60x40x3", name: "Tubolare 60x40x3 (Vert)", Wx: 13.5, Ix: 40.5, Imin: 20.2, Area: 5.5, open: false },
+  tub_80x40x3: { id: "tub_80x40x3", name: "Tubolare 80x40x3 (Vert)", Wx: 22, Ix: 88, Imin: 25.4, Area: 6.7, open: false },
+  tub_100x50x3: { id: "tub_100x50x3", name: "Tubolare 100x50x3 (Vert)", Wx: 26.5, Ix: 132, Imin: 45.8, Area: 8.5, open: false }
+};
+
+const defaultInputs = {
+  dimX: 2000,
+  dimY: 1000,
+  height: 1000,
+  gammaM: 1.05,
+  gammaG: 1.3,
+  gammaQ: 1.5,
+  frecciaMaxMm: 4,
+  coveringType: "lamiera",
+  coveringThickness: 5,
+  deckDir: "min",
+  activeLegs: ["A", "C", "D", "E", "F"],
+  activeBeams: [],
+  beamProfiles: {
+    1: "ang_60x60x4",
+    2: "ang_60x60x4",
+    3: "ang_60x60x4",
+    4: "ang_60x60x4",
+    5: "ang_60x60x4",
+    6: "ang_60x60x4",
+    7: "ang_60x60x4",
+    8: "ang_60x60x4"
+  },
+  legProfile: "ang_60x60x4"
+};
+
+const E = 210000;
+const FY = 235;
+const G = 9.81;
+const STEEL_DENSITY_KG_DM3 = 0.785;
+
+const clampMin = (value, min) => Math.max(Number(value) || min, min);
+const kgM2FromMpa = (mpa) => Math.max(0, mpa * 1000000 / G);
+const serviceNet = (grossKgM2, deadKgM2) => Math.max(0, grossKgM2 - deadKgM2);
+const resistanceNet = (grossKgM2, deadKgM2, gammaG, gammaQ) => Math.max(0, (grossKgM2 - gammaG * deadKgM2) / gammaQ);
+
+function getProfileWeight(profileKey, lengthMm) {
+  const areaCm2 = profiles[profileKey]?.Area || 0;
+  return areaCm2 * STEEL_DENSITY_KG_DM3 * (lengthMm / 1000);
+}
+
+function getCoveringWeightKgM2(type, thicknessMm) {
+  if (type === "lamiera") return thicknessMm * 7.85;
+  if (type === "grigliato") return 24.5;
+  if (type === "doga_a") return 96;
+  if (type === "doga_b") return 100;
+  if (type === "doga_comm") return 38.5;
+  return 0;
+}
+
+function getCoveringName(type, thicknessMm, deckDir) {
+  const dirName = deckDir === "min" ? "ottimale" : deckDir === "x" ? "parallela X" : "parallela Y";
+  if (type === "lamiera") return `Lamiera ${thicknessMm} mm`;
+  if (type === "grigliato") return `Grigliato 34x76 (${dirName})`;
+  if (type === "doga_a") return `Doga Tipo A 250x55x5 (${dirName})`;
+  if (type === "doga_b") return `Doga Tipo B 200x55x5 (${dirName})`;
+  if (type === "doga_comm") return `Doga commerciale 250x55x2 (${dirName})`;
+  return "Copertura non definita";
+}
+
+function panelSupports(safeX, safeY, activeBeams) {
+  const has5 = activeBeams.includes("5");
+  const has6 = activeBeams.includes("6");
+  const has7 = activeBeams.includes("7");
+  const has8 = activeBeams.includes("8");
+
+  const xSupports = [0, safeX];
+  if (has7) xSupports.push(safeX * 0.25);
+  if (has6) xSupports.push(safeX * 0.5);
+  if (has8) xSupports.push(safeX * 0.75);
+  xSupports.sort((a, b) => a - b);
+
+  let spanXPlate = 0;
+  for (let i = 1; i < xSupports.length; i += 1) {
+    spanXPlate = Math.max(spanXPlate, xSupports[i] - xSupports[i - 1]);
+  }
+
+  const spanYPlate = has5 ? safeY / 2 : safeY;
+  return { has5, has6, has7, has8, xSupports, spanXPlate, spanYPlate };
+}
+
+function calcCoveringGrossLimits({ type, thicknessMm, spanXPlate, spanYPlate, span1D, sigmaDesign, frecciaMaxMm }) {
+  if (type === "lamiera") {
+    const luceMin = Math.min(spanXPlate, spanYPlate);
+    const ratio = Math.max(spanXPlate, spanYPlate) / luceMin;
+    let alpha = 0.01;
+    let gamma = 0.1;
+    if (ratio > 2) {
+      alpha = 0.013;
+      gamma = 0.125;
+    } else if (ratio < 1.2) {
+      alpha = 0.005;
+      gamma = 0.06;
+    }
+
+    const dPlate = E * Math.pow(thicknessMm, 3) / (12 * (1 - Math.pow(0.3, 2)));
+    const deflectionLimit = frecciaMaxMm;
+    const qDeflection = deflectionLimit * dPlate / (alpha * Math.pow(luceMin, 4));
+    const wPlate = Math.pow(thicknessMm, 2) / 6;
+    const qYield = sigmaDesign * wPlate / (gamma * Math.pow(luceMin, 2));
+
+    return {
+      grossServiceKgM2: kgM2FromMpa(qDeflection),
+      grossResistanceKgM2: kgM2FromMpa(qYield),
+      notes: [`Piastra semplificata su luce critica ${Math.round(luceMin)} mm.`]
+    };
+  }
+
+  if (type === "grigliato") {
+    const h = 30;
+    const tp = 3;
+    const step = 34;
+    const immPerMm = tp * Math.pow(h, 3) / 12 / step;
+    const wmmPerMm = tp * Math.pow(h, 2) / 6 / step;
+    const deflectionLimit = frecciaMaxMm;
+    const qDeflection = 384 * E * immPerMm * deflectionLimit / (5 * Math.pow(span1D, 4));
+    const qYield = 8 * sigmaDesign * wmmPerMm / Math.pow(span1D, 2);
+    const catalogueCap = 600;
+
+    return {
+      grossServiceKgM2: Math.min(kgM2FromMpa(qDeflection), catalogueCap),
+      grossResistanceKgM2: Math.min(kgM2FromMpa(qYield), catalogueCap),
+      notes: ["Limite grigliato troncato a 600 kg/m2 salvo scheda tecnica del produttore."]
+    };
+  }
+
+  let width = 250;
+  let height = 55;
+  let thickness = 2;
+  let catalogueCap = null;
+  if (type === "doga_a") thickness = 5;
+  if (type === "doga_b") {
+    width = 200;
+    thickness = 5;
+  }
+  if (type === "doga_comm") catalogueCap = 509.68;
+
+  const hInt = Math.max(height - 2 * thickness, 1);
+  const wInt = Math.max(width - 2 * thickness, 1);
+  const iDoga = width * Math.pow(height, 3) / 12 - wInt * Math.pow(hInt, 3) / 12;
+  const wDoga = iDoga / (height / 2);
+  const deflectionLimit = frecciaMaxMm;
+  const qLineDeflection = 384 * E * iDoga * deflectionLimit / (5 * Math.pow(span1D, 4));
+  const qLineYield = 8 * sigmaDesign * wDoga / Math.pow(span1D, 2);
+  let service = kgM2FromMpa(qLineDeflection / width);
+  let resistance = kgM2FromMpa(qLineYield / width);
+  if (catalogueCap !== null) {
+    service = Math.min(service, catalogueCap);
+    resistance = Math.min(resistance, catalogueCap);
+  }
+
+  return {
+    grossServiceKgM2: service,
+    grossResistanceKgM2: resistance,
+    notes: ["Doga modellata come sezione scatolare equivalente: controllare sempre scheda del produttore."]
+  };
+}
+
+function calcTributaries({ coveringType, safeX, safeY, activeBeams, actualDir, xSupports, spanXPlate, spanYPlate }) {
+  const trib = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0 };
+  const has5 = activeBeams.includes("5");
+  const has6 = activeBeams.includes("6");
+  const has7 = activeBeams.includes("7");
+  const has8 = activeBeams.includes("8");
+
+  if (coveringType === "lamiera") {
+    const lLong = Math.max(spanXPlate, spanYPlate);
+    const lShort = Math.min(spanXPlate, spanYPlate);
+    const edgeLong = (lShort / 2) * (1 - Math.pow(lShort / lLong, 2) / 3);
+    const edgeShort = lShort / 3;
+    const xBeam = spanXPlate >= spanYPlate ? edgeLong : edgeShort;
+    const yBeam = spanXPlate >= spanYPlate ? edgeShort : edgeLong;
+    trib[1] = xBeam;
+    trib[3] = xBeam;
+    trib[5] = has5 ? xBeam * 2 : 0;
+    trib[2] = yBeam;
+    trib[4] = yBeam;
+    trib[6] = has6 ? yBeam * 2 : 0;
+    trib[7] = has7 ? yBeam * 2 : 0;
+    trib[8] = has8 ? yBeam * 2 : 0;
+    return trib;
+  }
+
+  const getTribX = (x) => {
+    const idx = xSupports.indexOf(x);
+    if (idx < 0) return 0;
+    const left = idx > 0 ? x - xSupports[idx - 1] : 0;
+    const right = idx < xSupports.length - 1 ? xSupports[idx + 1] - x : 0;
+    return (left + right) / 2;
+  };
+
+  if (actualDir === "x") {
+    trib[4] = getTribX(0);
+    trib[7] = has7 ? getTribX(safeX * 0.25) : 0;
+    trib[6] = has6 ? getTribX(safeX * 0.5) : 0;
+    trib[8] = has8 ? getTribX(safeX * 0.75) : 0;
+    trib[2] = getTribX(safeX);
+  } else {
+    const spanBetweenX = has5 ? safeY / 2 : safeY;
+    trib[1] = spanBetweenX / 2;
+    trib[3] = spanBetweenX / 2;
+    trib[5] = has5 ? spanBetweenX : 0;
+  }
+  return trib;
+}
+
+function calcBeamLimit({ id, profileKey, span, tributaryWidth, deadKgM2, sigmaDesign, gammaG, gammaQ, frecciaMaxMm }) {
+  if (tributaryWidth < 1) {
+    return { id, name: `Trave ${id}`, netKgM2: Infinity, grossResistanceKgM2: Infinity, grossServiceKgM2: Infinity, mode: "non caricata" };
+  }
+  const prof = profiles[profileKey] || profiles.ang_60x60x4;
+  const wxMm3 = prof.Wx * 1000;
+  const ixMm4 = prof.Ix * 10000;
+  const maxMoment = wxMm3 * sigmaDesign;
+  const qLineResistance = 8 * maxMoment / Math.pow(span, 2);
+  const deflectionLimit = frecciaMaxMm;
+  const qLineDeflection = 384 * E * ixMm4 * deflectionLimit / (5 * Math.pow(span, 4));
+  const grossResistanceKgM2 = kgM2FromMpa(qLineResistance / tributaryWidth);
+  const grossServiceKgM2 = kgM2FromMpa(qLineDeflection / tributaryWidth);
+  const netResistance = resistanceNet(grossResistanceKgM2, deadKgM2, gammaG, gammaQ);
+  const netService = serviceNet(grossServiceKgM2, deadKgM2);
+  const mode = netService < netResistance ? `freccia ${frecciaMaxMm} mm` : "flessione";
+
+  return {
+    id,
+    name: `Trave ${id}`,
+    profile: prof.name,
+    netKgM2: Math.min(netResistance, netService),
+    grossResistanceKgM2,
+    grossServiceKgM2,
+    mode,
+    tributaryWidth,
+    span
+  };
+}
+
+function calcLegLimit({ activeLegs, legProfile, safeH, totalAreaM2, deadKgM2, sigmaDesign, gammaG, gammaQ }) {
+  if (!activeLegs.length) {
+    return { id: "legs", name: "Gambe", netKgM2: 0, mode: "nessun supporto attivo" };
+  }
+
+  const prof = profiles[legProfile] || profiles.ang_60x60x4;
+  const iminMm4 = (prof.Imin || prof.Ix * 0.35) * 10000;
+  const areaMm2 = prof.Area * 100;
+  const kEuler = 2;
+  const pCriticalN = Math.PI ** 2 * E * iminMm4 / Math.pow(kEuler * safeH, 2);
+  const pCompressionN = areaMm2 * sigmaDesign;
+  const pDesignN = Math.min(pCompressionN, pCriticalN / 3);
+  const pDesignKg = pDesignN / G;
+
+  const maxTributaryAreaM2 = Math.max(totalAreaM2 / activeLegs.length * 1.5, 0.01);
+  const grossKgM2 = pDesignKg / maxTributaryAreaM2;
+  const netKgM2 = resistanceNet(grossKgM2, deadKgM2, gammaG, gammaQ);
+
+  return {
+    id: "legs",
+    name: "Gambe",
+    profile: prof.name,
+    netKgM2,
+    grossResistanceKgM2: grossKgM2,
+    grossServiceKgM2: Infinity,
+    mode: pCompressionN < pCriticalN / 3 ? "compressione" : "instabilita Eulero semplificata",
+    notes: ["Distribuzione reazioni sulle gambe semplificata: richiede verifica manuale dei vincoli e dei nodi."]
+  };
+}
+
+function calculateStructure(raw = {}) {
+  const input = {
+    ...defaultInputs,
+    ...raw,
+    beamProfiles: { ...defaultInputs.beamProfiles, ...(raw.beamProfiles || {}) }
+  };
+
+  const safeX = clampMin(input.dimX, 10);
+  const safeY = clampMin(input.dimY, 10);
+  const safeH = clampMin(input.height, 10);
+  const thicknessMm = clampMin(input.coveringThickness, 1);
+  const gammaM = clampMin(input.gammaM, 1);
+  const gammaG = clampMin(input.gammaG, 1);
+  const gammaQ = clampMin(input.gammaQ, 1);
+  const frecciaMaxMm = clampMin(input.frecciaMaxMm, 1);
+  const sigmaDesign = FY / gammaM;
+  const totalAreaM2 = safeX * safeY / 1000000;
+  const activeBeams = input.activeBeams || [];
+  const activeLegs = input.activeLegs || [];
+
+  const support = panelSupports(safeX, safeY, activeBeams);
+  const actualDir = input.deckDir === "min"
+    ? support.spanXPlate <= support.spanYPlate ? "x" : "y"
+    : input.deckDir;
+  const span1D = actualDir === "x" ? support.spanXPlate : support.spanYPlate;
+
+  const coverKgM2 = getCoveringWeightKgM2(input.coveringType, thicknessMm);
+  const coverWeightKg = coverKgM2 * totalAreaM2;
+  const frameWeightKg =
+    getProfileWeight(input.beamProfiles[1], safeX) +
+    getProfileWeight(input.beamProfiles[3], safeX) +
+    (support.has5 ? getProfileWeight(input.beamProfiles[5], safeX) : 0) +
+    getProfileWeight(input.beamProfiles[2], safeY) +
+    getProfileWeight(input.beamProfiles[4], safeY) +
+    (support.has6 ? getProfileWeight(input.beamProfiles[6], safeY) : 0) +
+    (support.has7 ? getProfileWeight(input.beamProfiles[7], safeY) : 0) +
+    (support.has8 ? getProfileWeight(input.beamProfiles[8], safeY) : 0) +
+    getProfileWeight(input.legProfile, safeH) * activeLegs.length;
+
+  const totalDeadKg = coverWeightKg + frameWeightKg;
+  const deadKgM2 = totalDeadKg / totalAreaM2;
+  const coverGross = calcCoveringGrossLimits({
+    type: input.coveringType,
+    thicknessMm,
+    spanXPlate: support.spanXPlate,
+    spanYPlate: support.spanYPlate,
+    span1D,
+    sigmaDesign,
+    frecciaMaxMm
+  });
+
+  const plateLimit = {
+    id: "plate",
+    name: getCoveringName(input.coveringType, thicknessMm, actualDir),
+    profile: null,
+    netKgM2: Math.min(
+      serviceNet(coverGross.grossServiceKgM2, deadKgM2),
+      resistanceNet(coverGross.grossResistanceKgM2, deadKgM2, gammaG, gammaQ)
+    ),
+    grossResistanceKgM2: coverGross.grossResistanceKgM2,
+    grossServiceKgM2: coverGross.grossServiceKgM2,
+    mode: serviceNet(coverGross.grossServiceKgM2, deadKgM2) <
+      resistanceNet(coverGross.grossResistanceKgM2, deadKgM2, gammaG, gammaQ)
+      ? `freccia ${frecciaMaxMm} mm`
+      : "resistenza",
+    notes: coverGross.notes
+  };
+
+  const trib = calcTributaries({
+    coveringType: input.coveringType,
+    safeX,
+    safeY,
+    activeBeams,
+    actualDir,
+    xSupports: support.xSupports,
+    spanXPlate: support.spanXPlate,
+    spanYPlate: support.spanYPlate
+  });
+
+  const beamSpans = {
+    1: activeLegs.includes("D") ? safeX / 2 : safeX,
+    3: activeLegs.includes("B") ? safeX / 2 : safeX,
+    4: activeLegs.includes("H") ? safeY / 2 : safeY,
+    2: activeLegs.includes("I") ? safeY / 2 : safeY,
+    5: activeLegs.includes("G") ? safeX / 2 : safeX,
+    6: activeLegs.includes("G") ? safeY / 2 : safeY,
+    7: safeY,
+    8: safeY
+  };
+
+  const limits = [
+    plateLimit,
+    ...[1, 2, 3, 4].map((id) => calcBeamLimit({
+      id: String(id),
+      profileKey: input.beamProfiles[id],
+      span: beamSpans[id],
+      tributaryWidth: trib[id],
+      deadKgM2,
+      sigmaDesign,
+      gammaG,
+      gammaQ,
+      frecciaMaxMm
+    }))
+  ];
+
+  [5, 6, 7, 8].forEach((id) => {
+    if (activeBeams.includes(String(id))) {
+      limits.push(calcBeamLimit({
+        id: String(id),
+        profileKey: input.beamProfiles[id],
+        span: beamSpans[id],
+        tributaryWidth: trib[id],
+        deadKgM2,
+        sigmaDesign,
+        gammaG,
+        gammaQ,
+        frecciaMaxMm
+      }));
+    }
+  });
+
+  limits.push(calcLegLimit({
+    activeLegs,
+    legProfile: input.legProfile,
+    safeH,
+      totalAreaM2,
+      deadKgM2,
+      sigmaDesign,
+      gammaG,
+      gammaQ
+  }));
+
+  const finiteLimits = limits.filter((limit) => Number.isFinite(limit.netKgM2));
+  finiteLimits.sort((a, b) => a.netKgM2 - b.netKgM2);
+  const bottleneck = finiteLimits[0] || { id: "error", name: "Errore", netKgM2: 0, mode: "nessun limite calcolato" };
+  const usefulKgM2 = Math.max(0, bottleneck.netKgM2);
+  const usefulTotalKg = usefulKgM2 * totalAreaM2;
+
+  const warnings = [
+    "Risultato per predimensionamento: non sostituisce calcolo firmato da tecnico abilitato.",
+    "Nodi, saldature, bulloni, piastre di base, punzonamento, torsione e carichi concentrati non sono verificati.",
+    "I profili aperti possono richiedere verifica di instabilita flesso-torsionale e ritegni laterali."
+  ];
+  if (input.coveringType === "lamiera" && activeBeams.length) {
+    warnings.push("Lamiera con traversi interni modellata con pannello critico globale: per validazione dividere in pannelli reali.");
+  }
+  if (profiles[input.legProfile]?.open) {
+    warnings.push("Gambe con angolari: inerzia minima e vincoli reali devono essere confermati da tabellario e disegno costruttivo.");
+  }
+
+  return {
+    input,
+    geometry: {
+      safeX,
+      safeY,
+      safeH,
+      totalAreaM2,
+      spanXPlate: support.spanXPlate,
+      spanYPlate: support.spanYPlate,
+      actualDir,
+      span1D,
+      frecciaMaxMm
+    },
+    weights: {
+      coverKgM2,
+      coverWeightKg,
+      frameWeightKg,
+      totalDeadKg,
+      deadKgM2
+    },
+    limits,
+    bottleneck,
+    result: {
+      usefulKgM2,
+      usefulTotalKg,
+      status: usefulKgM2 > 0 ? "PRELIMINARE PRUDENZIALE" : "NON UTILIZZABILE"
+    },
+    warnings
+  };
+}
+
+
+      let state = JSON.parse(JSON.stringify(defaultInputs));
+      let modelState = { rotZ: -45, rotX: 60, zoom: 1, view: "iso", dragging: false, lastX: 0, lastY: 0 };
+      const fmt = (value, digits = 0) => Number(value || 0).toLocaleString("it-IT", {
+        maximumFractionDigits: digits,
+        minimumFractionDigits: digits
+      });
+      const byId = (id) => document.getElementById(id);
+      const profileOptions = Object.values(profiles)
+        .map((profile) => `<option value="${profile.id}">${profile.name}</option>`)
+        .join("");
+
+      function setPatch(patch) {
+        state = { ...state, ...patch };
+        render();
+      }
+
+      function setBeamProfile(id, value) {
+        state = {
+          ...state,
+          beamProfiles: { ...state.beamProfiles, [id]: value }
+        };
+        render();
+      }
+
+      function toggleInArray(field, value) {
+        const list = state[field];
+        state = {
+          ...state,
+          [field]: list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
+        };
+        render();
+      }
+
+      function numberInput(label, key, step = "1") {
+        return `
+          <label>${label}
+            <input type="number" step="${step}" value="${state[key]}" data-number="${key}">
+          </label>
+        `;
+      }
+
+      function inlineNumber(label, key, step = "1") {
+        return `
+          <div class="inline-row">
+            <label>${label}</label>
+            <input type="number" step="${step}" value="${state[key]}" data-number="${key}">
+          </div>
+        `;
+      }
+
+      function profileSelect(label, id) {
+        return `
+          <label>${label}
+            <select data-profile="${id}">
+              ${profileOptions}
+            </select>
+          </label>
+        `;
+      }
+
+      function render() {
+        const calc = calculateStructure(state);
+        renderModel(calc);
+        byId("summary").innerHTML = `
+          <div class="summary-main">
+            <article class="portata">
+              <h2>Portata massima utile</h2>
+              <div class="big"><strong>${fmt(calc.result.usefulTotalKg)}</strong><span>kg</span></div>
+              <div style="margin-top:8px;color:#dbeafe;font-weight:800">${fmt(calc.result.usefulKgM2)} kg/m2</div>
+            </article>
+            <article class="bottleneck-panel">
+              <div class="alert">
+                <div style="font-size:24px;line-height:1">!</div>
+                <div>
+                  <div style="font-weight:900;color:#fecaca">Collo di bottiglia</div>
+                  <div style="color:#e2e8f0">Il carico e' limitato da: <strong>${calc.bottleneck.name}</strong>.</div>
+                  <div style="color:#94a3b8;font-size:13px;margin-top:2px">${calc.bottleneck.mode}</div>
+                </div>
+              </div>
+              <div class="weights">
+                <div class="weight"><small>Solo copertura</small><strong>${fmt(calc.weights.coverWeightKg, 1)} kg</strong></div>
+                <div class="weight"><small>Solo telaio</small><strong>${fmt(calc.weights.frameWeightKg, 1)} kg</strong></div>
+                <div class="weight"><small>Peso totale vuoto</small><strong>${fmt(calc.weights.totalDeadKg, 1)} kg</strong></div>
+              </div>
+            </article>
+          </div>
+        `;
+
+        byId("geom").innerHTML = `
+          <h2>Geometria telaio</h2>
+          ${inlineNumber("L_X [mm]", "dimX")}
+          ${inlineNumber("L_Y [mm]", "dimY")}
+          ${inlineNumber("H_Z [mm]", "height")}
+          ${inlineNumber("Sicurezza gamma M", "gammaM", "0.05")}
+          ${inlineNumber("Freccia max carico [mm]", "frecciaMaxMm", "0.5")}
+          <p class="field-note">Limite di deformazione verticale usato nelle verifiche SLE. Impostato a 4 mm.</p>
+        `;
+
+        byId("topology").innerHTML = `
+          <h2>Topologia interna</h2>
+          <div class="check-list">
+            <label><input type="checkbox" data-beam-check="6" ${state.activeBeams.includes("6") ? "checked" : ""}> Traverso Asse Y (Centrale)</label>
+            <label><input type="checkbox" data-beam-check="5" ${state.activeBeams.includes("5") ? "checked" : ""}> Traverso Asse X (Longherone)</label>
+            <label><input type="checkbox" data-beam-check="7" ${state.activeBeams.includes("7") ? "checked" : ""}> Extra Y (L/4)</label>
+            <label><input type="checkbox" data-beam-check="8" ${state.activeBeams.includes("8") ? "checked" : ""}> Extra Y (3L/4)</label>
+          </div>
+          <div style="margin-top:20px">
+            <p style="margin:0 0 10px;color:#64748b;font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:.12em">Gambe attive</p>
+            <div class="grid nine">
+              ${["A", "B", "C", "D", "E", "F", "G", "H", "I"].map((id) => `<button data-leg="${id}" class="${state.activeLegs.includes(id) ? "active" : ""}">${id}</button>`).join("")}
+            </div>
+          </div>
+        `;
+
+        byId("cover").innerHTML = `
+          <h2>Definizione copertura</h2>
+          <div class="grid two">
+            <label>Tipologia di copertura
+            <select data-key="coveringType">
+              <option value="lamiera">Lamiera liscia/bugnata</option>
+              <option value="grigliato">Grigliato 34x76</option>
+              <option value="doga_a">Doga Tipo A</option>
+              <option value="doga_b">Doga Tipo B</option>
+              <option value="doga_comm">Doga commerciale</option>
+            </select>
+            </label>
+            ${state.coveringType === "lamiera" ? numberInput("Spessore lamiera [mm]", "coveringThickness") : `
+              <label>Orditura piatti portanti
+              <select data-key="deckDir">
+                <option value="min">Ottimale</option>
+                <option value="x">Parallela X</option>
+                <option value="y">Parallela Y</option>
+              </select>
+              </label>
+            `}
+          </div>
+        `;
+
+        const beamIds = [1, 2, 3, 4, ...[5, 6, 7, 8].filter((id) => state.activeBeams.includes(String(id)))];
+        byId("profiles").innerHTML = `
+          <h2>Assegnazione profili telaio</h2>
+          <div class="grid cards-3">
+            ${beamIds.map((id) => profileSelect(`Trave ${id}`, id)).join("")}
+            <label>Tutte le gambe
+              <select data-key="legProfile">${profileOptions}</select>
+            </label>
+          </div>
+        `;
+
+        byId("limits").innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Elemento</th>
+                <th>Profilo</th>
+                <th class="num">Utile kg/m2</th>
+                <th class="num">SLE lordo</th>
+                <th class="num">SLU lordo</th>
+                <th>Governa</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${calc.limits.map((limit) => `
+                <tr class="${limit.id === calc.bottleneck.id ? "hot" : ""}">
+                  <td>${limit.name}</td>
+                  <td>${limit.profile || "-"}</td>
+                  <td class="num">${fmt(limit.netKgM2)}</td>
+                  <td class="num">${Number.isFinite(limit.grossServiceKgM2) ? fmt(limit.grossServiceKgM2) : "-"}</td>
+                  <td class="num">${Number.isFinite(limit.grossResistanceKgM2) ? fmt(limit.grossResistanceKgM2) : "-"}</td>
+                  <td>${limit.mode}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+
+        byId("warnings").innerHTML = calc.warnings.map((warning) => `<li>${warning}</li>`).join("");
+        renderPrintSheet(calc);
+
+        document.querySelectorAll("[data-number]").forEach((input) => {
+          input.addEventListener("change", () => setPatch({ [input.dataset.number]: Number(input.value) }));
+        });
+        document.querySelectorAll("[data-key]").forEach((select) => {
+          select.value = state[select.dataset.key];
+          select.addEventListener("change", () => setPatch({ [select.dataset.key]: select.value }));
+        });
+        document.querySelectorAll("[data-profile]").forEach((select) => {
+          select.value = state.beamProfiles[select.dataset.profile];
+          select.addEventListener("change", () => setBeamProfile(select.dataset.profile, select.value));
+        });
+        document.querySelector("[data-key='legProfile']").value = state.legProfile;
+        document.querySelectorAll("[data-beam]").forEach((button) => {
+          button.addEventListener("click", () => toggleInArray("activeBeams", button.dataset.beam));
+        });
+        document.querySelectorAll("[data-leg]").forEach((button) => {
+          button.addEventListener("click", () => toggleInArray("activeLegs", button.dataset.leg));
+        });
+        document.querySelectorAll("[data-beam-check]").forEach((input) => {
+          input.addEventListener("change", () => toggleInArray("activeBeams", input.dataset.beamCheck));
+        });
+        document.querySelectorAll("[data-chapter]").forEach((button) => {
+          button.addEventListener("click", () => showChapter(button.dataset.chapter));
+        });
+      }
+
+      function showChapter(chapterId) {
+        document.querySelectorAll(".chapter").forEach((chapter) => {
+          chapter.classList.toggle("active", chapter.id === chapterId);
+        });
+        document.querySelectorAll("[data-chapter]").forEach((button) => {
+          button.classList.toggle("active", button.dataset.chapter === chapterId);
+        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function renderModel(calc) {
+        const x = calc.geometry.safeX;
+        const y = calc.geometry.safeY;
+        const h = calc.geometry.safeH;
+        const maxExt = Math.max(x, y, h, 1);
+        const scale = 165 / maxExt * modelState.zoom;
+        const cx = 560;
+        const cy = 225;
+        const hot = calc.bottleneck.id;
+        const activeBeams = state.activeBeams;
+        const activeLegs = state.activeLegs;
+
+        const project = ([px, py, pz]) => {
+          const ox = px - x / 2;
+          const oy = py - y / 2;
+          const oz = pz - h / 2;
+          const rz = modelState.rotZ * Math.PI / 180;
+          const rx = modelState.rotX * Math.PI / 180;
+          const x1 = ox * Math.cos(rz) - oy * Math.sin(rz);
+          const y1 = ox * Math.sin(rz) + oy * Math.cos(rz);
+          const z1 = oz;
+          const x2 = x1;
+          const y2 = y1 * Math.cos(rx) - z1 * Math.sin(rx);
+          const z2 = y1 * Math.sin(rx) + z1 * Math.cos(rx);
+          return { x: cx + x2 * scale, y: cy - z2 * scale, depth: -y2 };
+        };
+        const points = (poly) => poly.map((p) => {
+          const q = project(p);
+          return `${q.x.toFixed(1)},${q.y.toFixed(1)}`;
+        }).join(" ");
+        const line = (id, a, b, wide = false) => {
+          const p1 = project(a);
+          const p2 = project(b);
+          const color = hot === id ? "#ef4444" : "#94a3b8";
+          const glow = hot === id ? "filter=\"url(#glow)\"" : "";
+          const mainWidth = wide ? 8 : 6;
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const len = Math.max(Math.hypot(dx, dy), 1);
+          const nx = -dy / len;
+          const ny = dx / len;
+          const ox = nx * (wide ? 7 : 5);
+          const oy = ny * (wide ? 7 : 5);
+          const sx = nx * (wide ? -5 : -4);
+          const sy = ny * (wide ? -5 : -4);
+          return `
+            <line x1="${p1.x + sx}" y1="${p1.y + sy + 5}" x2="${p2.x + sx}" y2="${p2.y + sy + 5}" stroke="rgba(2,6,23,.76)" stroke-width="${mainWidth + 8}" stroke-linecap="square"/>
+            <line x1="${p1.x + sx}" y1="${p1.y + sy}" x2="${p2.x + sx}" y2="${p2.y + sy}" stroke="${color}" stroke-width="${mainWidth + 3}" stroke-linecap="square" ${glow}/>
+            <line x1="${p1.x + ox}" y1="${p1.y + oy}" x2="${p2.x + ox}" y2="${p2.y + oy}" stroke="${color}" stroke-width="${mainWidth}" stroke-linecap="square" ${glow}/>
+            <line x1="${p1.x + sx}" y1="${p1.y + sy}" x2="${p1.x + ox}" y2="${p1.y + oy}" stroke="${color}" stroke-width="${mainWidth}" stroke-linecap="square"/>
+            <line x1="${p2.x + sx}" y1="${p2.y + sy}" x2="${p2.x + ox}" y2="${p2.y + oy}" stroke="${color}" stroke-width="${mainWidth}" stroke-linecap="square"/>
+            <line x1="${p1.x + ox}" y1="${p1.y + oy - 2}" x2="${p2.x + ox}" y2="${p2.y + oy - 2}" stroke="rgba(255,255,255,.34)" stroke-width="1.2" stroke-linecap="square"/>
+            <line x1="${p1.x + sx}" y1="${p1.y + sy - 2}" x2="${p2.x + sx}" y2="${p2.y + sy - 2}" stroke="rgba(255,255,255,.22)" stroke-width="1.2" stroke-linecap="square"/>
+          `;
+        };
+        const leg = (id, px, py) => activeLegs.includes(id)
+          ? line("legs", [px, py, 0], [px, py, h], true)
+          : "";
+        const label = (text, p) => {
+          const q = project(p);
+          return `<text x="${q.x}" y="${q.y}" text-anchor="middle" fill="#cbd5e1" font-size="13" font-weight="800">${text}</text>`;
+        };
+        const poly = (pts, fill, stroke = "#64748b", width = 1) =>
+          `<polygon points="${points(pts)}" fill="${fill}" stroke="${stroke}" stroke-width="${width}" stroke-linejoin="round"/>`;
+        const coverLine = (a, b, color, width = 2, opacity = 1) => {
+          const p1 = project(a);
+          const p2 = project(b);
+          return `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color}" stroke-width="${width}" stroke-linecap="round" opacity="${opacity}"/>`;
+        };
+        const coverLabel = () => {
+          const names = {
+            lamiera: "Lamiera",
+            grigliato: "Grigliato",
+            doga_a: "Doghe A",
+            doga_b: "Doghe B",
+            doga_comm: "Doghe comm."
+          };
+          return names[state.coveringType] || "Copertura";
+        };
+
+        const top = h;
+        const beams = [
+          line("1", [0, 0, top], [x, 0, top], true),
+          line("2", [x, 0, top], [x, y, top], true),
+          line("3", [x, y, top], [0, y, top], true),
+          line("4", [0, y, top], [0, 0, top], true),
+          activeBeams.includes("5") ? line("5", [0, y / 2, top], [x, y / 2, top], true) : "",
+          activeBeams.includes("6") ? line("6", [x / 2, 0, top], [x / 2, y, top], true) : "",
+          activeBeams.includes("7") ? line("7", [x * 0.25, 0, top], [x * 0.25, y, top], true) : "",
+          activeBeams.includes("8") ? line("8", [x * 0.75, 0, top], [x * 0.75, y, top], true) : ""
+        ].join("");
+
+        const legs = [
+          leg("A", 0, y),
+          leg("B", x / 2, y),
+          leg("C", x, y),
+          leg("H", 0, y / 2),
+          leg("G", x / 2, y / 2),
+          leg("I", x, y / 2),
+          leg("F", 0, 0),
+          leg("D", x / 2, 0),
+          leg("E", x, 0)
+        ].join("");
+
+        const coverFill = hot === "plate" ? "rgba(239,68,68,.28)" : "rgba(148,163,184,.22)";
+        const coverStroke = hot === "plate" ? "#ef4444" : "#64748b";
+        const zc = top + 8;
+        let cover = "";
+        if (state.coveringType === "grigliato") {
+          const isMainX = calc.geometry.actualDir === "x";
+          const mainCount = 28;
+          const crossCount = 10;
+          const mainColor = hot === "plate" ? "#fca5a5" : "#cbd5e1";
+          const crossColor = "#64748b";
+          cover += poly([[0,0,zc],[x,0,zc],[x,y,zc],[0,y,zc]], "rgba(15,23,42,.12)", coverStroke, 2.5);
+          cover += coverLine([0, 0, zc + 4], [x, 0, zc + 4], "#e2e8f0", 4);
+          cover += coverLine([x, 0, zc + 4], [x, y, zc + 4], "#cbd5e1", 4);
+          cover += coverLine([x, y, zc + 4], [0, y, zc + 4], "#94a3b8", 4);
+          cover += coverLine([0, y, zc + 4], [0, 0, zc + 4], "#94a3b8", 4);
+          if (isMainX) {
+            for (let i = 0; i <= mainCount; i += 1) {
+              const yy = y * i / mainCount;
+              cover += coverLine([0, yy, zc + 2], [x, yy, zc + 2], mainColor, 2.6);
+            }
+            for (let i = 0; i <= crossCount; i += 1) {
+              const xx = x * i / crossCount;
+              cover += coverLine([xx, 0, zc + 3], [xx, y, zc + 3], crossColor, 1.2);
+            }
+          } else {
+            for (let i = 0; i <= mainCount; i += 1) {
+              const xx = x * i / mainCount;
+              cover += coverLine([xx, 0, zc + 2], [xx, y, zc + 2], mainColor, 2.6);
+            }
+            for (let i = 0; i <= crossCount; i += 1) {
+              const yy = y * i / crossCount;
+              cover += coverLine([0, yy, zc + 3], [x, yy, zc + 3], crossColor, 1.2);
+            }
+          }
+        } else if (state.coveringType.startsWith("doga")) {
+          const isMainX = calc.geometry.actualDir === "x";
+          const plankW = state.coveringType === "doga_b" ? 200 : 250;
+          const gap = Math.max(8, Math.min(x, y) * 0.006);
+          const slotStep = 170;
+          const fill = hot === "plate" ? "rgba(239,68,68,.34)" : "rgba(203,213,225,.75)";
+          const stroke = hot === "plate" ? "#ef4444" : "#475569";
+          if (isMainX) {
+            for (let yy = 0; yy < y; yy += plankW) {
+              const y2 = Math.min(yy + plankW - gap, y);
+              if (y2 <= yy) continue;
+              cover += poly([[0, yy, zc], [x, yy, zc], [x, y2, zc], [0, y2, zc]], fill, stroke, 1.6);
+              cover += coverLine([0, yy + 8, zc + 4], [x, yy + 8, zc + 4], "rgba(255,255,255,.45)", 1.4);
+              cover += coverLine([0, y2 - 8, zc + 2], [x, y2 - 8, zc + 2], "rgba(15,23,42,.42)", 1.2);
+              const sy1 = yy + (y2 - yy) * 0.22;
+              const sy2 = yy + (y2 - yy) * 0.78;
+              for (let xx = slotStep / 2; xx < x; xx += slotStep) {
+                cover += coverLine([xx, sy1, zc + 3], [xx, sy2, zc + 3], "#0f172a", 3.2, 0.9);
+                cover += coverLine([xx - 5, sy1, zc + 4], [xx - 5, sy2, zc + 4], "rgba(255,255,255,.42)", 1.4, 0.9);
+              }
+            }
+          } else {
+            for (let xx = 0; xx < x; xx += plankW) {
+              const x2 = Math.min(xx + plankW - gap, x);
+              if (x2 <= xx) continue;
+              cover += poly([[xx, 0, zc], [x2, 0, zc], [x2, y, zc], [xx, y, zc]], fill, stroke, 1.6);
+              cover += coverLine([xx + 8, 0, zc + 4], [xx + 8, y, zc + 4], "rgba(255,255,255,.45)", 1.4);
+              cover += coverLine([x2 - 8, 0, zc + 2], [x2 - 8, y, zc + 2], "rgba(15,23,42,.42)", 1.2);
+              const sx1 = xx + (x2 - xx) * 0.22;
+              const sx2 = xx + (x2 - xx) * 0.78;
+              for (let yy = slotStep / 2; yy < y; yy += slotStep) {
+                cover += coverLine([sx1, yy, zc + 3], [sx2, yy, zc + 3], "#0f172a", 3.2, 0.9);
+                cover += coverLine([sx1, yy - 5, zc + 4], [sx2, yy - 5, zc + 4], "rgba(255,255,255,.42)", 1.4, 0.9);
+              }
+            }
+          }
+        } else {
+          cover = poly([[0,0,zc],[x,0,zc],[x,y,zc],[0,y,zc]], coverFill, coverStroke, 2);
+          const ribCount = Math.max(4, Math.min(14, Math.round(x / 220)));
+          for (let i = 1; i < ribCount; i += 1) {
+            const xx = x * i / ribCount;
+            cover += coverLine([xx, 0, zc + 2], [xx, y, zc + 2], "rgba(226,232,240,.35)", 1);
+          }
+          const bugneX = Math.max(5, Math.min(14, Math.round(x / 170)));
+          const bugneY = Math.max(3, Math.min(8, Math.round(y / 170)));
+          for (let ix = 0; ix < bugneX; ix += 1) {
+            for (let iy = 0; iy < bugneY; iy += 1) {
+              const bx = x * (ix + 0.5) / bugneX;
+              const by = y * (iy + 0.5) / bugneY;
+              const b1 = project([bx - 18, by, zc + 5]);
+              const b2 = project([bx + 18, by, zc + 5]);
+              cover += `<line x1="${b1.x}" y1="${b1.y}" x2="${b2.x}" y2="${b2.y}" stroke="rgba(255,255,255,.34)" stroke-width="2" stroke-linecap="round"/>`;
+            }
+          }
+        }
+        const floor = `<polygon points="${points([[0,0,0],[x,0,0],[x,y,0],[0,y,0]])}" fill="rgba(2,6,23,.42)" stroke="#334155" stroke-width="1" stroke-dasharray="5 5"/>`;
+
+        byId("model-caption").textContent = `${coverLabel()} - ${fmt(x)} x ${fmt(y)} x ${fmt(h)} mm - zoom ${Math.round(modelState.zoom * 100)}%`;
+        byId("model").classList.toggle("dragging", modelState.dragging);
+        document.querySelectorAll("[data-view]").forEach((button) => {
+          button.classList.toggle("active", button.dataset.view === modelState.view);
+        });
+        byId("model").innerHTML = `
+          <svg viewBox="0 0 1120 360" role="img" aria-label="Modello isometrico del telaio">
+            <defs>
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            ${floor}
+            ${legs}
+            ${beams}
+            ${cover}
+            ${label("1", [x / 2, -70, top])}
+            ${label("2", [x + 70, y / 2, top])}
+            ${label("3", [x / 2, y + 70, top])}
+            ${label("4", [-70, y / 2, top])}
+            ${activeBeams.includes("5") ? label("5", [x / 2, y / 2 - 70, top]) : ""}
+            ${activeBeams.includes("6") ? label("6", [x / 2 + 70, y / 2, top]) : ""}
+            ${hot === "legs" ? `<text x="28" y="332" fill="#fca5a5" font-size="13" font-weight="800">Gambe critiche</text>` : ""}
+          </svg>
+        `;
+      }
+
+      function renderPrintSheet(calc) {
+        const activeBeams = state.activeBeams.length ? state.activeBeams.join(", ") : "nessuno";
+        const activeLegs = state.activeLegs.length ? state.activeLegs.join(", ") : "nessuna";
+        const topLimits = calc.limits
+          .filter((limit) => Number.isFinite(limit.netKgM2))
+          .slice()
+          .sort((a, b) => a.netKgM2 - b.netKgM2)
+          .slice(0, 6);
+        byId("print-sheet").innerHTML = `
+          <h3>Scheda riepilogo portata pagliolo</h3>
+          <p>Documento di predimensionamento prudenziale. Non sostituisce verifica e firma di tecnico abilitato.</p>
+          <div class="print-grid">
+            <div class="print-box"><small>Portata utile netta</small><strong>${fmt(calc.result.usefulTotalKg)} kg</strong></div>
+            <div class="print-box"><small>Portata superficiale</small><strong>${fmt(calc.result.usefulKgM2)} kg/m2</strong></div>
+            <div class="print-box"><small>Collo di bottiglia</small><strong>${calc.bottleneck.name}</strong></div>
+            <div class="print-box"><small>Dimensioni</small><strong>${fmt(calc.geometry.safeX)} x ${fmt(calc.geometry.safeY)} x ${fmt(calc.geometry.safeH)} mm</strong></div>
+            <div class="print-box"><small>Peso proprio</small><strong>${fmt(calc.weights.totalDeadKg, 1)} kg</strong></div>
+            <div class="print-box"><small>Area</small><strong>${fmt(calc.geometry.totalAreaM2, 2)} m2</strong></div>
+            <div class="print-box"><small>Freccia max</small><strong>${fmt(calc.geometry.frecciaMaxMm, 1)} mm</strong></div>
+            <div class="print-box"><small>Copertura</small><strong>${state.coveringType}</strong></div>
+            <div class="print-box"><small>Traversi attivi</small><strong>${activeBeams}</strong></div>
+            <div class="print-box"><small>Gambe attive</small><strong>${activeLegs}</strong></div>
+          </div>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th>Elemento</th>
+                <th>Profilo</th>
+                <th>Utile kg/m2</th>
+                <th>Governa</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${topLimits.map((limit) => `
+                <tr>
+                  <td>${limit.name}</td>
+                  <td>${limit.profile || "-"}</td>
+                  <td>${fmt(limit.netKgM2)}</td>
+                  <td>${limit.mode}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+          <p style="margin-top:14px;font-size:12px">Avvertenze: nodi, saldature, bulloni, piastre di base, torsione, carichi concentrati e instabilita' flesso-torsionale non sono verificati.</p>
+        `;
+      }
+
+      function setModelView(view) {
+        if (view === "iso") {
+          modelState = { ...modelState, rotZ: -45, rotX: 60, zoom: 1, view: "iso" };
+        } else if (view === "top") {
+          modelState = { ...modelState, rotZ: 0, rotX: 90, zoom: 1, view: "top" };
+        } else if (view === "front") {
+          modelState = { ...modelState, rotZ: 0, rotX: 0, zoom: 1, view: "front" };
+        } else if (view === "reset") {
+          modelState = { ...modelState, rotZ: -45, rotX: 60, zoom: 1, view: "iso" };
+        }
+        render();
+      }
+
+      function setupModelInteractions() {
+        const model = byId("model");
+        model.addEventListener("mousedown", (event) => {
+          modelState = { ...modelState, dragging: true, lastX: event.clientX, lastY: event.clientY, view: "custom" };
+          render();
+        });
+        window.addEventListener("mousemove", (event) => {
+          if (!modelState.dragging) return;
+          const dx = event.clientX - modelState.lastX;
+          const dy = event.clientY - modelState.lastY;
+          modelState = {
+            ...modelState,
+            rotZ: (modelState.rotZ + dx * 0.45) % 360,
+            rotX: Math.max(0, Math.min(90, modelState.rotX - dy * 0.45)),
+            lastX: event.clientX,
+            lastY: event.clientY,
+            view: "custom"
+          };
+          render();
+        });
+        window.addEventListener("mouseup", () => {
+          if (!modelState.dragging) return;
+          modelState = { ...modelState, dragging: false };
+          render();
+        });
+        model.addEventListener("wheel", (event) => {
+          event.preventDefault();
+          const factor = event.deltaY > 0 ? 0.9 : 1.1;
+          modelState = { ...modelState, zoom: Math.max(0.25, Math.min(5, modelState.zoom * factor)), view: "custom" };
+          render();
+        }, { passive: false });
+        document.querySelectorAll("[data-view]").forEach((button) => {
+          button.addEventListener("click", () => setModelView(button.dataset.view));
+        });
+        document.querySelectorAll("[data-zoom]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const factor = button.dataset.zoom === "in" ? 1.2 : 1 / 1.2;
+            modelState = { ...modelState, zoom: Math.max(0.25, Math.min(5, modelState.zoom * factor)), view: "custom" };
+            render();
+          });
+        });
+        byId("print-button").addEventListener("click", () => window.print());
+      }
+
+      render();
+      setupModelInteractions();
+    </script>
+  </body>
+</html>
+
